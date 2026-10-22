@@ -1,0 +1,15 @@
+# OWASP Juice Shop — a deliberately insecure web application, for testing the
+# scanner against a realistic target.
+#
+#   docker compose -f examples/docker-compose.yml up -d
+#   websec-scan http://127.0.0.1:3000 --authorized --html report.html
+#   docker compose -f examples/docker-compose.yml down
+#
+# Juice Shop is intended for security training; only run it locally.
+services:
+  juice-shop:
+    image: bkimminich/juice-shop:latest
+    container_name: websec-juice-shop
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

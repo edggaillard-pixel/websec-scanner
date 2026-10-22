@@ -1,0 +1,78 @@
+# Built-in wordlist for the exposed-files check.
+# Format: <path> <category>
+# category is one of: vcs, env, backup, config, devfile, admin
+# Lines starting with '#' and blank lines are ignored.
+# Extend at runtime with --wordlist <file> (same format); entries are merged.
+
+# --- Version control ---
+.git/config vcs
+.git/HEAD vcs
+.gitignore devfile
+.svn/entries vcs
+.hg/requires vcs
+.bzr/README vcs
+
+# --- Secrets / environment ---
+.env env
+.env.local env
+.env.production env
+.env.backup env
+config/.env env
+.aws/credentials env
+.npmrc env
+.htpasswd env
+id_rsa env
+
+# --- Config files ---
+config.php config
+configuration.php config
+wp-config.php config
+config.php.bak backup
+settings.py config
+application.yml config
+appsettings.json config
+web.config config
+.htaccess config
+docker-compose.yml config
+phpinfo.php config
+
+# --- Backups / dumps ---
+backup.zip backup
+backup.tar.gz backup
+backup.sql backup
+database.sql backup
+dump.sql backup
+db.sql backup
+www.zip backup
+site.tar.gz backup
+index.php.bak backup
+index.html.bak backup
+.DS_Store devfile
+
+# --- Dev / metadata files ---
+composer.json devfile
+composer.lock devfile
+package.json devfile
+package-lock.json devfile
+yarn.lock devfile
+Gemfile devfile
+Gemfile.lock devfile
+requirements.txt devfile
+.dockerignore devfile
+Dockerfile devfile
+Makefile devfile
+README.md devfile
+CHANGELOG.md devfile
+server-status devfile
+.well-known/security.txt devfile
+
+# --- Admin interfaces ---
+admin/ admin
+administrator/ admin
+wp-admin/ admin
+phpmyadmin/ admin
+adminer.php admin
+manager/html admin
+.git/ vcs
+backup/ backup
+uploads/ admin

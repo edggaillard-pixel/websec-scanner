@@ -1,0 +1,311 @@
+{
+  "scanner_version": "0.1.0",
+  "started_at": "2026-10-22T11:29:35+00:00",
+  "duration_s": 0.147,
+  "lang": "en",
+  "targets": [
+    {
+      "target": "http://127.0.0.1:8099",
+      "score": {
+        "points": 181,
+        "score_0_100": 100,
+        "level": "high",
+        "counts": {
+          "info": 2,
+          "low": 7,
+          "medium": 5,
+          "high": 2,
+          "critical": 2
+        }
+      },
+      "checks_run": [
+        "cookies",
+        "csp",
+        "exposed_files",
+        "http_banners",
+        "robots",
+        "security_headers",
+        "tls"
+      ],
+      "errors": [],
+      "duration_s": 0.145,
+      "findings": [
+        {
+          "id": "exposed_vcs",
+          "check": "exposed_files",
+          "title": "Version-control directory exposed",
+          "severity": "critical",
+          "description": "'.git/config' is reachable (HTTP 200); a VCS directory can leak source code, history and secrets.",
+          "recommendation": "Block access to VCS directories and never deploy them to production.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-527",
+          "evidence": {
+            "path": ".git/config",
+            "status": 200,
+            "content_type": "text/html; charset=utf-8",
+            "length": 50
+          },
+          "weight": 40
+        },
+        {
+          "id": "exposed_env",
+          "check": "exposed_files",
+          "title": "Environment / secrets file exposed",
+          "severity": "critical",
+          "description": "'.env' is reachable (HTTP 200) and may contain credentials, API keys or other secrets.",
+          "recommendation": "Remove the file from the web root and rotate any exposed secrets.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "path": ".env",
+            "status": 200,
+            "content_type": "text/html; charset=utf-8",
+            "length": 72
+          },
+          "weight": 40
+        },
+        {
+          "id": "exposed_config",
+          "check": "exposed_files",
+          "title": "Configuration file exposed",
+          "severity": "high",
+          "description": "'wp-config.php' is reachable (HTTP 200); configuration files may reveal credentials and internal settings.",
+          "recommendation": "Move configuration outside the web root and deny direct access.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "path": "wp-config.php",
+            "status": 200,
+            "content_type": "text/html; charset=utf-8",
+            "length": 50
+          },
+          "weight": 20
+        },
+        {
+          "id": "exposed_backup",
+          "check": "exposed_files",
+          "title": "Backup / dump file exposed",
+          "severity": "high",
+          "description": "'backup.zip' is reachable (HTTP 200); backups and dumps often contain source code or database contents.",
+          "recommendation": "Remove backup/dump artefacts from the web root.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-530",
+          "evidence": {
+            "path": "backup.zip",
+            "status": 200,
+            "content_type": "text/html; charset=utf-8",
+            "length": 304
+          },
+          "weight": 20
+        },
+        {
+          "id": "csp_unsafe_inline",
+          "check": "csp",
+          "title": "CSP allows 'unsafe-inline'",
+          "severity": "medium",
+          "description": "The CSP directive 'default-src' allows 'unsafe-inline', which largely defeats the protection against inline-script XSS.",
+          "recommendation": "Remove 'unsafe-inline' and use nonces or hashes for inline scripts.",
+          "owasp": "A03:2021",
+          "cwe": "CWE-79",
+          "evidence": {
+            "directive": "default-src"
+          },
+          "weight": 8
+        },
+        {
+          "id": "csp_unsafe_inline",
+          "check": "csp",
+          "title": "CSP allows 'unsafe-inline'",
+          "severity": "medium",
+          "description": "The CSP directive 'script-src' allows 'unsafe-inline', which largely defeats the protection against inline-script XSS.",
+          "recommendation": "Remove 'unsafe-inline' and use nonces or hashes for inline scripts.",
+          "owasp": "A03:2021",
+          "cwe": "CWE-79",
+          "evidence": {
+            "directive": "script-src"
+          },
+          "weight": 8
+        },
+        {
+          "id": "csp_wildcard_source",
+          "check": "csp",
+          "title": "CSP uses a wildcard source",
+          "severity": "medium",
+          "description": "The CSP directive 'default-src' allows a wildcard '*' source, which permits loading from any origin.",
+          "recommendation": "Replace '*' with an explicit allow-list of trusted origins.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-942",
+          "evidence": {
+            "directive": "default-src"
+          },
+          "weight": 8
+        },
+        {
+          "id": "exposed_devfile",
+          "check": "exposed_files",
+          "title": "Development / metadata file exposed",
+          "severity": "medium",
+          "description": "'composer.json' is reachable (HTTP 200) and can leak internal information.",
+          "recommendation": "Remove development and metadata files from production.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "path": "composer.json",
+            "status": 200,
+            "content_type": "text/html; charset=utf-8",
+            "length": 46
+          },
+          "weight": 8
+        },
+        {
+          "id": "missing_x_frame_options",
+          "check": "security_headers",
+          "title": "No clickjacking protection",
+          "severity": "medium",
+          "description": "Neither X-Frame-Options nor a CSP 'frame-ancestors' directive is present, so the page can be framed by third parties (clickjacking).",
+          "recommendation": "Set 'X-Frame-Options: DENY' or a CSP 'frame-ancestors' directive.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-1021",
+          "evidence": {},
+          "weight": 8
+        },
+        {
+          "id": "cookie_missing_httponly",
+          "check": "cookies",
+          "title": "Cookie without HttpOnly flag",
+          "severity": "low",
+          "description": "Cookie(s) session lack the 'HttpOnly' flag and are reachable from JavaScript, increasing the impact of XSS.",
+          "recommendation": "Add 'HttpOnly' to cookies that do not need JS access (e.g. session).",
+          "owasp": "A05:2021",
+          "cwe": "CWE-1004",
+          "evidence": {
+            "cookies": [
+              "session"
+            ]
+          },
+          "weight": 3
+        },
+        {
+          "id": "cookie_missing_samesite",
+          "check": "cookies",
+          "title": "Cookie without SameSite attribute",
+          "severity": "low",
+          "description": "Cookie(s) session have no explicit 'SameSite' attribute, weakening CSRF defences.",
+          "recommendation": "Set 'SameSite=Lax' (or 'Strict') explicitly on cookies.",
+          "owasp": "A01:2021",
+          "cwe": "CWE-352",
+          "evidence": {
+            "cookies": [
+              "session"
+            ]
+          },
+          "weight": 3
+        },
+        {
+          "id": "csp_missing_base_uri",
+          "check": "csp",
+          "title": "CSP has no base-uri",
+          "severity": "low",
+          "description": "No 'base-uri' directive is set, allowing injected <base> tags to redirect relative URLs.",
+          "recommendation": "Add \"base-uri 'self'\" (or \"base-uri 'none'\").",
+          "owasp": "A05:2021",
+          "cwe": "CWE-693",
+          "evidence": {},
+          "weight": 3
+        },
+        {
+          "id": "banner_version_disclosure",
+          "check": "http_banners",
+          "title": "Software version disclosed in headers",
+          "severity": "low",
+          "description": "Header 'server: Apache/2.4.52 (Unix) PHP/8.1.2' discloses a component and its version, helping attackers target known vulnerabilities.",
+          "recommendation": "Suppress or genericise version banners (server).",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "header": "server",
+            "value": "Apache/2.4.52 (Unix) PHP/8.1.2"
+          },
+          "weight": 3
+        },
+        {
+          "id": "banner_version_disclosure",
+          "check": "http_banners",
+          "title": "Software version disclosed in headers",
+          "severity": "low",
+          "description": "Header 'x-powered-by: PHP/8.1.2' discloses a component and its version, helping attackers target known vulnerabilities.",
+          "recommendation": "Suppress or genericise version banners (x-powered-by).",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "header": "x-powered-by",
+            "value": "PHP/8.1.2"
+          },
+          "weight": 3
+        },
+        {
+          "id": "missing_x_content_type_options",
+          "check": "security_headers",
+          "title": "No MIME-sniffing protection",
+          "severity": "low",
+          "description": "X-Content-Type-Options is not set to 'nosniff', so browsers may interpret responses as a different content type than declared.",
+          "recommendation": "Send 'X-Content-Type-Options: nosniff'.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-693",
+          "evidence": {
+            "value": null
+          },
+          "weight": 3
+        },
+        {
+          "id": "missing_referrer_policy",
+          "check": "security_headers",
+          "title": "No Referrer-Policy",
+          "severity": "low",
+          "description": "No Referrer-Policy is set; full URLs may leak to third-party sites.",
+          "recommendation": "Set 'Referrer-Policy: strict-origin-when-cross-origin' (or stricter).",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {},
+          "weight": 3
+        },
+        {
+          "id": "robots_sensitive_paths",
+          "check": "robots",
+          "title": "robots.txt reveals sensitive paths",
+          "severity": "info",
+          "description": "robots.txt disallows paths that hint at sensitive areas: /admin/, /backup/, /config/.",
+          "recommendation": "Do not rely on robots.txt to hide sensitive paths; protect them server-side.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-200",
+          "evidence": {
+            "disallowed": [
+              "/admin/",
+              "/backup/",
+              "/config/",
+              "/public/"
+            ],
+            "sensitive": [
+              "/admin/",
+              "/backup/",
+              "/config/"
+            ]
+          },
+          "weight": 0
+        },
+        {
+          "id": "missing_permissions_policy",
+          "check": "security_headers",
+          "title": "No Permissions-Policy",
+          "severity": "info",
+          "description": "No Permissions-Policy header; browser features (camera, geolocation, etc.) are not explicitly restricted.",
+          "recommendation": "Declare a Permissions-Policy that disables unused features.",
+          "owasp": "A05:2021",
+          "cwe": "CWE-693",
+          "evidence": {},
+          "weight": 0
+        }
+      ]
+    }
+  ]
+}

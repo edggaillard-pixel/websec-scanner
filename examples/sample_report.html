@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Web Security Posture Report</title>
+<style>
+  :root {
+    --bg: #0f1419; --panel: #1a212b; --panel-2: #222b38; --text: #e6edf3;
+    --muted: #8b98a9; --border: #2d3745; --accent: #4c9fff;
+    --crit: #b4232a; --high: #d9641e; --med: #c9a227; --low: #3f7cad; --info: #5a6b7d;
+    --ok: #2ea043;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: .2px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .meta code { color: var(--accent); }
+  .disclaimer {
+    margin: 18px 0 28px; padding: 10px 14px; font-size: 13px; color: var(--muted);
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 6px; background: var(--panel);
+  }
+  .target {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    margin: 22px 0; overflow: hidden;
+  }
+  .target > .head {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 16px;
+    padding: 18px 20px; border-bottom: 1px solid var(--border); background: var(--panel-2);
+  }
+  .target .url { font-size: 17px; font-weight: 600; word-break: break-all; flex: 1 1 auto; }
+  .badge {
+    display: inline-block; padding: 5px 12px; border-radius: 999px;
+    font-weight: 700; font-size: 13px; letter-spacing: .5px; color: #fff;
+  }
+  .risk-low { background: var(--ok); }
+  .risk-medium { background: var(--med); color:#1a1a1a; }
+  .risk-high { background: var(--crit); }
+  .gauge { font-size: 13px; color: var(--muted); }
+  .gauge strong { color: var(--text); font-size: 15px; }
+  .counts { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 20px; border-bottom: 1px solid var(--border); }
+  .pill {
+    font-size: 12px; padding: 3px 9px; border-radius: 6px; border: 1px solid var(--border);
+    color: var(--text); background: var(--bg);
+  }
+  .pill .n { font-weight: 700; }
+  .dot { display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:6px; vertical-align: middle; }
+  .d-critical { background: var(--crit); } .d-high { background: var(--high); }
+  .d-medium { background: var(--med); } .d-low { background: var(--low); } .d-info { background: var(--info); }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+    color: var(--muted); padding: 10px 20px; border-bottom: 1px solid var(--border);
+  }
+  tbody td { padding: 14px 20px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  .sev {
+    font-weight: 700; font-size: 12px; padding: 3px 8px; border-radius: 5px; color: #fff; white-space: nowrap;
+  }
+  .sev-critical { background: var(--crit); } .sev-high { background: var(--high); }
+  .sev-medium { background: var(--med); color:#1a1a1a; } .sev-low { background: var(--low); } .sev-info { background: var(--info); }
+  .f-title { font-weight: 600; }
+  .f-desc { color: var(--text); margin: 4px 0 8px; }
+  .f-reco { color: var(--muted); font-size: 13.5px; }
+  .f-reco b { color: var(--text); font-weight: 600; }
+  .refs { margin-top: 8px; }
+  .ref { font-size: 11.5px; color: var(--accent); border: 1px solid var(--border); padding: 1px 7px; border-radius: 5px; margin-right: 6px; }
+  details.evidence { margin-top: 8px; }
+  details.evidence summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+  pre.evidence {
+    margin: 6px 0 0; padding: 10px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; font-size: 12px; overflow-x: auto; color: var(--muted);
+  }
+  .empty { padding: 20px; color: var(--muted); }
+  .errs { padding: 10px 20px; color: #d9a441; font-size: 13px; border-bottom: 1px solid var(--border); }
+  footer { margin-top: 32px; color: var(--muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Web Security Posture Report</h1>
+    <div class="meta">
+      Generated: 2026-10-22 11:29 UTC &nbsp;·&nbsp;
+      Scanner: <code>websec-scanner 0.1.0</code> &nbsp;·&nbsp;
+      Duration: 0.147s
+    </div>
+  </header>
+
+  <div class="disclaimer">Non-destructive, read-only assessment. Run only against systems you are authorised to test.</div>
+
+  
+  <section class="target">
+    <div class="head">
+      <div class="url">http://127.0.0.1:8099</div>
+      
+      <div class="gauge">Risk score: <strong>100</strong>/100</div>
+      <span class="badge risk-high">Overall risk: HIGH</span>
+      
+    </div>
+
+    
+    <div class="counts">
+      
+      <span class="pill"><span class="dot d-critical"></span>Critical: <span class="n">2</span></span>
+      
+      <span class="pill"><span class="dot d-high"></span>High: <span class="n">2</span></span>
+      
+      <span class="pill"><span class="dot d-medium"></span>Medium: <span class="n">5</span></span>
+      
+      <span class="pill"><span class="dot d-low"></span>Low: <span class="n">7</span></span>
+      
+      <span class="pill"><span class="dot d-info"></span>Info: <span class="n">2</span></span>
+      
+    </div>
+    
+
+    
+
+    
+    <table>
+      <thead>
+        <tr>
+          <th style="width:90px">Severity</th>
+          <th>Finding</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+        <tr>
+          <td><span class="sev sev-critical">Critical</span></td>
+          <td>
+            <div class="f-title">Version-control directory exposed</div>
+            <div class="f-desc">'.git/config' is reachable (HTTP 200); a VCS directory can leak source code, history and secrets.</div>
+            <div class="f-reco"><b>Recommendation:</b> Block access to VCS directories and never deploy them to production.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-527</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "content_type": "text/html; charset=utf-8",
+  "length": 50,
+  "path": ".git/config",
+  "status": 200
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-critical">Critical</span></td>
+          <td>
+            <div class="f-title">Environment / secrets file exposed</div>
+            <div class="f-desc">'.env' is reachable (HTTP 200) and may contain credentials, API keys or other secrets.</div>
+            <div class="f-reco"><b>Recommendation:</b> Remove the file from the web root and rotate any exposed secrets.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "content_type": "text/html; charset=utf-8",
+  "length": 72,
+  "path": ".env",
+  "status": 200
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-high">High</span></td>
+          <td>
+            <div class="f-title">Configuration file exposed</div>
+            <div class="f-desc">'wp-config.php' is reachable (HTTP 200); configuration files may reveal credentials and internal settings.</div>
+            <div class="f-reco"><b>Recommendation:</b> Move configuration outside the web root and deny direct access.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "content_type": "text/html; charset=utf-8",
+  "length": 50,
+  "path": "wp-config.php",
+  "status": 200
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-high">High</span></td>
+          <td>
+            <div class="f-title">Backup / dump file exposed</div>
+            <div class="f-desc">'backup.zip' is reachable (HTTP 200); backups and dumps often contain source code or database contents.</div>
+            <div class="f-reco"><b>Recommendation:</b> Remove backup/dump artefacts from the web root.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-530</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "content_type": "text/html; charset=utf-8",
+  "length": 304,
+  "path": "backup.zip",
+  "status": 200
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-medium">Medium</span></td>
+          <td>
+            <div class="f-title">CSP allows 'unsafe-inline'</div>
+            <div class="f-desc">The CSP directive 'default-src' allows 'unsafe-inline', which largely defeats the protection against inline-script XSS.</div>
+            <div class="f-reco"><b>Recommendation:</b> Remove 'unsafe-inline' and use nonces or hashes for inline scripts.</div>
+            <div class="refs">
+              <span class="ref">OWASP A03:2021</span>
+              <span class="ref">CWE-79</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "directive": "default-src"
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-medium">Medium</span></td>
+          <td>
+            <div class="f-title">CSP allows 'unsafe-inline'</div>
+            <div class="f-desc">The CSP directive 'script-src' allows 'unsafe-inline', which largely defeats the protection against inline-script XSS.</div>
+            <div class="f-reco"><b>Recommendation:</b> Remove 'unsafe-inline' and use nonces or hashes for inline scripts.</div>
+            <div class="refs">
+              <span class="ref">OWASP A03:2021</span>
+              <span class="ref">CWE-79</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "directive": "script-src"
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-medium">Medium</span></td>
+          <td>
+            <div class="f-title">CSP uses a wildcard source</div>
+            <div class="f-desc">The CSP directive 'default-src' allows a wildcard '*' source, which permits loading from any origin.</div>
+            <div class="f-reco"><b>Recommendation:</b> Replace '*' with an explicit allow-list of trusted origins.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-942</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "directive": "default-src"
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-medium">Medium</span></td>
+          <td>
+            <div class="f-title">Development / metadata file exposed</div>
+            <div class="f-desc">'composer.json' is reachable (HTTP 200) and can leak internal information.</div>
+            <div class="f-reco"><b>Recommendation:</b> Remove development and metadata files from production.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "content_type": "text/html; charset=utf-8",
+  "length": 46,
+  "path": "composer.json",
+  "status": 200
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-medium">Medium</span></td>
+          <td>
+            <div class="f-title">No clickjacking protection</div>
+            <div class="f-desc">Neither X-Frame-Options nor a CSP 'frame-ancestors' directive is present, so the page can be framed by third parties (clickjacking).</div>
+            <div class="f-reco"><b>Recommendation:</b> Set 'X-Frame-Options: DENY' or a CSP 'frame-ancestors' directive.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-1021</span>
+            </div>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">Cookie without HttpOnly flag</div>
+            <div class="f-desc">Cookie(s) session lack the 'HttpOnly' flag and are reachable from JavaScript, increasing the impact of XSS.</div>
+            <div class="f-reco"><b>Recommendation:</b> Add 'HttpOnly' to cookies that do not need JS access (e.g. session).</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-1004</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "cookies": [
+    "session"
+  ]
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">Cookie without SameSite attribute</div>
+            <div class="f-desc">Cookie(s) session have no explicit 'SameSite' attribute, weakening CSRF defences.</div>
+            <div class="f-reco"><b>Recommendation:</b> Set 'SameSite=Lax' (or 'Strict') explicitly on cookies.</div>
+            <div class="refs">
+              <span class="ref">OWASP A01:2021</span>
+              <span class="ref">CWE-352</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "cookies": [
+    "session"
+  ]
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">CSP has no base-uri</div>
+            <div class="f-desc">No 'base-uri' directive is set, allowing injected <base> tags to redirect relative URLs.</div>
+            <div class="f-reco"><b>Recommendation:</b> Add "base-uri 'self'" (or "base-uri 'none'").</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-693</span>
+            </div>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">Software version disclosed in headers</div>
+            <div class="f-desc">Header 'server: Apache/2.4.52 (Unix) PHP/8.1.2' discloses a component and its version, helping attackers target known vulnerabilities.</div>
+            <div class="f-reco"><b>Recommendation:</b> Suppress or genericise version banners (server).</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "header": "server",
+  "value": "Apache/2.4.52 (Unix) PHP/8.1.2"
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">Software version disclosed in headers</div>
+            <div class="f-desc">Header 'x-powered-by: PHP/8.1.2' discloses a component and its version, helping attackers target known vulnerabilities.</div>
+            <div class="f-reco"><b>Recommendation:</b> Suppress or genericise version banners (x-powered-by).</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "header": "x-powered-by",
+  "value": "PHP/8.1.2"
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">No MIME-sniffing protection</div>
+            <div class="f-desc">X-Content-Type-Options is not set to 'nosniff', so browsers may interpret responses as a different content type than declared.</div>
+            <div class="f-reco"><b>Recommendation:</b> Send 'X-Content-Type-Options: nosniff'.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-693</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "value": null
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-low">Low</span></td>
+          <td>
+            <div class="f-title">No Referrer-Policy</div>
+            <div class="f-desc">No Referrer-Policy is set; full URLs may leak to third-party sites.</div>
+            <div class="f-reco"><b>Recommendation:</b> Set 'Referrer-Policy: strict-origin-when-cross-origin' (or stricter).</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-info">Info</span></td>
+          <td>
+            <div class="f-title">robots.txt reveals sensitive paths</div>
+            <div class="f-desc">robots.txt disallows paths that hint at sensitive areas: /admin/, /backup/, /config/.</div>
+            <div class="f-reco"><b>Recommendation:</b> Do not rely on robots.txt to hide sensitive paths; protect them server-side.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-200</span>
+            </div>
+            
+            <details class="evidence">
+              <summary>Evidence</summary>
+              <pre class="evidence">{
+  "disallowed": [
+    "/admin/",
+    "/backup/",
+    "/config/",
+    "/public/"
+  ],
+  "sensitive": [
+    "/admin/",
+    "/backup/",
+    "/config/"
+  ]
+}</pre>
+            </details>
+            
+          </td>
+        </tr>
+        
+        <tr>
+          <td><span class="sev sev-info">Info</span></td>
+          <td>
+            <div class="f-title">No Permissions-Policy</div>
+            <div class="f-desc">No Permissions-Policy header; browser features (camera, geolocation, etc.) are not explicitly restricted.</div>
+            <div class="f-reco"><b>Recommendation:</b> Declare a Permissions-Policy that disables unused features.</div>
+            <div class="refs">
+              <span class="ref">OWASP A05:2021</span>
+              <span class="ref">CWE-693</span>
+            </div>
+            
+          </td>
+        </tr>
+        
+      </tbody>
+    </table>
+    
+  </section>
+  
+
+  <footer>websec-scanner · 0.1.0</footer>
+</div>
+</body>
+</html>
