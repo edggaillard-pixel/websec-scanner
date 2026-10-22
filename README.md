@@ -143,4 +143,7 @@ Licence
 
 MIT.
 
-# GROGNON
+IA
+---
+
+L'intelligence artificielle a été utilisée pour concevoir la charte graphique, structurer les rubriques de ce projet et le readme.
