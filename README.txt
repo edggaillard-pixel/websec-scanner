@@ -1,109 +1,112 @@
 websec-scanner
 ==============
 
-I put this together as a portfolio project while learning cybersecurity. It's a
-small command-line tool that points at a website and tells you how well it's
-locked down: missing security headers, a sloppy TLS config, files that really
-shouldn't be public, and so on. It never does anything destructive, it just
-sends normal GET requests and reads what comes back.
+Petit scanner de sécurité web que j'ai codé en Python pour mon portfolio de
+cybersécurité. En gros tu lui donnes l'URL d'un site et il te dit ce qui cloche
+dans sa config : en-têtes de sécurité manquants, TLS mal réglé, fichiers
+sensibles accessibles alors qu'ils ne devraient pas, etc. Il ne fait que lire
+(des requêtes GET), il n'attaque rien.
 
-Honestly the idea came from redoing the same manual checks over and over
-(curl -I, poking at /.git/, squinting at the CSP by hand) and wanting something
-that does the boring part for me and spits out a clean report.
+Je l'ai fait parce que je refaisais tout le temps les mêmes vérifs à la main
+(curl -I, aller voir si /.git/ répond, relire la CSP ligne par ligne) et que
+j'en avais marre. Maintenant une commande le fait et me sort un rapport.
 
-A screenshot of the HTML report is in docs/report_screenshot.png.
-
-
-What it actually checks
------------------------
-
-- Security headers: HSTS (and whether the policy is any good), X-Frame-Options,
-  X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
-- The CSP, a bit more thoroughly than just "is it there": unsafe-inline,
-  unsafe-eval, wildcard sources, missing default-src / base-uri.
-- Cookie flags: Secure, HttpOnly, SameSite.
-- TLS: certificate expiry, trust chain, hostname match, and whether the server
-  still accepts ancient TLS 1.0 / 1.1.
-- robots.txt: disallowed paths that basically point a finger at the sensitive
-  areas.
-- Exposed files: /.git/, .env, backups, wp-config.php and the usual suspects. It
-  first learns how the site answers for pages that don't exist (soft-404
-  calibration) so it doesn't scream about false positives on sites that return
-  200 for everything.
-- Leaky banners: Server / X-Powered-By headers giving away version numbers.
-
-Each finding is tagged with an OWASP Top 10 (2021) category and a CWE, and comes
-with a short "here's how to fix it" line.
+Une capture du rapport HTML est dans docs/report_screenshot.png.
 
 
-Getting it running
-------------------
+Ce qu'il regarde
+----------------
+
+- Les en-têtes de sécurité : HSTS, X-Frame-Options, X-Content-Type-Options,
+  Referrer-Policy, Permissions-Policy.
+- La CSP, un peu plus en détail que juste "elle est là ou pas" : unsafe-inline,
+  unsafe-eval, sources en *, default-src ou base-uri qui manquent.
+- Les attributs des cookies : Secure, HttpOnly, SameSite.
+- Le TLS : date d'expiration du certif, chaîne de confiance, nom d'hôte, et si
+  le serveur accepte encore les vieux TLS 1.0 / 1.1.
+- robots.txt : les chemins en Disallow qui en disent long sur ce qu'on cherche
+  à cacher.
+- Les fichiers exposés : /.git/, .env, sauvegardes, wp-config.php et compagnie.
+  Avant de crier au loup il regarde d'abord comment le site répond pour une page
+  qui n'existe pas (calibration soft-404), sinon on a plein de faux positifs sur
+  les sites qui renvoient 200 pour tout.
+- Les bannières Server / X-Powered-By qui balancent les numéros de version.
+
+Chaque problème trouvé est rattaché à une catégorie OWASP Top 10 et à un CWE,
+avec une petite reco pour corriger.
+
+
+Installation
+------------
 
     git clone https://github.com/edggaillard-pixel/websec-scanner.git
     cd websec-scanner
     python -m venv .venv
     .venv\Scripts\activate          (Windows)
-    source .venv/bin/activate       (macOS / Linux)
+    source .venv/bin/activate       (Mac / Linux)
     pip install -e .
 
-Needs Python 3.11+.
+Il faut Python 3.11 ou plus.
 
-One important thing: only run this against things you own or are allowed to
-test. Scanning random sites without permission is illegal in France (and most
-places), so the tool flatly refuses to start unless you pass --authorized.
-That's deliberate.
+Important : ne lance ça que sur des sites qui t'appartiennent ou pour lesquels
+tu as l'autorisation. Scanner un site au hasard sans permission c'est illégal en
+France, donc l'outil refuse carrément de démarrer tant que tu ne mets pas
+--authorized. C'est fait exprès.
 
-    # the basics
+
+Comment on s'en sert
+--------------------
+
+    # la base
     websec-scan https://example.com --authorized
 
-    # save reports, in French
+    # sauver les rapports, en français
     websec-scan https://example.com --authorized --json report.json --html report.html --lang fr
 
-    # a bunch of targets from a file, being polite about it
+    # plusieurs cibles depuis un fichier, sans bourriner
     websec-scan --authorized -f targets.txt --rate-limit 0.5
 
-    # just some checks
+    # seulement certains contrôles
     websec-scan https://example.com --authorized --only security_headers,csp,tls
 
-    # what checks exist?
+    # voir les contrôles dispo
     websec-scan --list-checks
 
-Exit codes are handy for CI: 0 = low risk, 1 = medium, 2 = high, 3 = you forgot
---authorized.
+Les codes de sortie servent pour la CI : 0 = risque faible, 1 = moyen, 2 =
+élevé, 3 = t'as oublié --authorized.
 
 
-Want to try it without a real target?
--------------------------------------
+Tester sans vraie cible
+-----------------------
 
-There's a deliberately broken little server in examples/ so you can see the
-scanner light up without touching anything you don't own:
+J'ai mis un petit serveur volontairement troué dans examples/ pour voir le
+scanner réagir sans toucher à quoi que ce soit qui ne t'appartient pas :
 
     python examples/vulnerable_server.py --port 8099
-    # then, in another terminal:
+    # puis, dans un autre terminal :
     websec-scan http://127.0.0.1:8099 --authorized --html report.html
 
-You can also throw it at OWASP Juice Shop with the docker-compose.yml in there if
-you'd rather test against something more realistic. There are sample reports in
-examples/ too (JSON + HTML, English and French) from a real run against the
-broken server.
+Il y a aussi un docker-compose.yml pour le lancer contre OWASP Juice Shop si tu
+veux un truc plus réaliste. Et des rapports d'exemple dans examples/ (JSON + HTML,
+FR et EN) qui viennent d'un vrai run contre le serveur troué.
 
 
-How the score works
--------------------
+Le score
+--------
 
-I kept this dead simple on purpose, mostly so I can explain it out loud in an
-interview. Every finding has a weight (info 0, low 3, medium 8, high 20,
-critical 40). They get added up, and the total lands in Low / Medium / High. The
-one twist: a single critical finding (an exposed .git, say) drags the whole
-thing to High no matter what else is going on. The thresholds live in
-core/scoring.py if you want to tweak them.
+Volontairement tout simple, surtout pour pouvoir l'expliquer à l'oral. Chaque
+problème a un poids (info 0, faible 3, moyen 8, élevé 20, critique 40). On
+additionne, et le total tombe dans Faible / Moyen / Élevé. Le seul truc en plus :
+un seul problème critique (un .git exposé par exemple) fait passer tout le site
+en Élevé, peu importe le reste. Les seuils sont dans core/scoring.py si tu veux
+les bidouiller.
 
 
-How it's put together
----------------------
+Comment c'est organisé
+----------------------
 
-The core library (core/) doesn't know anything about the CLI, so you can just
-import it and use it in your own code:
+Le cœur (core/) ne connaît rien de la ligne de commande, donc tu peux juste
+l'importer dans ton propre code :
 
     from websec_scanner.core import Scanner, ScanConfig
     from websec_scanner.reporting import render_json
@@ -111,31 +114,31 @@ import it and use it in your own code:
     result = Scanner(ScanConfig(authorized=True)).scan(["https://example.com"])
     print(render_json(result))
 
-Checks live in checks/, one file each, and they register themselves
-automatically, so adding a new one is genuinely a one-file job. There's a
-walkthrough in docs/EXTENDING.md.
+Les contrôles sont dans checks/, un fichier par contrôle, et ils s'enregistrent
+tout seuls. Du coup en ajouter un c'est vraiment un seul fichier à écrire. Il y a
+un petit guide dans docs/EXTENDING.md.
 
 
-What it won't do
-----------------
+Ce qu'il ne fait pas
+--------------------
 
-It's a posture / attack-surface scanner, not a pentest framework. No crawling,
-no logging in, no payloads, so don't expect it to find SQL injection or XSS. The
-output is a prioritised hardening checklist, not a certificate that says you're
-safe.
+C'est un scanner de posture / surface d'attaque, pas un outil de pentest. Pas de
+crawl, pas de connexion, pas d'injection de payload, donc il ne trouvera pas de
+faille SQL ou de XSS. Le résultat c'est une liste de trucs à durcir en priorité,
+pas un certificat qui dit que t'es safe.
 
 
-Dev stuff
----------
+Pour développer
+---------------
 
     pip install -e ".[dev]"
-    pytest -q          (30 tests, all mocked, runs offline)
+    pytest -q          (30 tests, tout est simulé, ça tourne hors ligne)
     ruff check src tests
 
-GitHub Actions runs ruff + pytest on 3.11 and 3.12 on every push.
+GitHub Actions relance ruff + pytest sur 3.11 et 3.12 à chaque push.
 
 
-License
+Licence
 -------
 
 MIT.
